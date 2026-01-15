@@ -1,0 +1,88 @@
+
+
+Prerequisites
+Docker Desktop must be installed and running (you should see the whale icon in your taskbar).
+PowerShell must be run as Administrator.
+
+
+// step 1. install choco package manager in widows using PowerShell as an Administrator
+
+1. Copy and paste below command in powershell
+
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+2. check choco version so that we can verify it is installed or not 
+
+PS C:\Users\piyush_kumar> choco -v
+2.3.0
+
+
+Once choco is install now we will install kubectl for windows using chocolatey
+
+// step 2. install kubectl  using choco
+
+1. choco install kubernetes-cli
+
+verify it is installed or not 
+
+2. PS C:\Users\piyush_kumar> kubectl version --client
+Client Version: v1.32.2
+Kustomize Version: v5.5.0
+
+
+Once Kubectl is installed now we are installing minikube on windows using chocolatey
+
+// step 3.  install chocolatey using choco
+
+1. choco install minikube
+
+now check minikube is installed or not using 
+
+2. check minikube version  
+
+you should see like PS C:\Users\piyush_kumar> minikube version
+minikube version: v1.33.0
+commit: 86fc9d54fca63f295d8737c8eacdbb7987e89c67
+
+if you are not seeing this it means you are getting error 
+
+so for fixing do one thing follow below steps carefully 
+
+Press Windows Key and search for "env".
+Select Edit the system environment variables.
+Click the Environment Variables button.
+In the top section (User variables), double-click Path.
+Click New and paste:
+C:\Users\piyush_kumar\AppData\Roaming\npm\lib\Minikube\tools
+Click OK on all windows.
+
+after this once you  do 
+
+PS C:\Users\piyush_kumar> minikube version
+minikube version: v1.33.0
+commit: 86fc9d54fca63f295d8737c8eacdbb7987e89c67
+
+you will see this thing above on your powershell 
+
+
+Step 3: Start the Cluster
+Now that the software is installed, you need to turn the "virtual computer" on.
+code
+Powershell
+minikube start --driver=docker
+
+
+Step 4: Verify Everything is Working
+Check if your node is running:
+kubectl get nodes
+
+and now you are ready 
+
+PS C:\Users\piyush_kumar> kubectl get nodes
+NAME       STATUS   ROLES           AGE   VERSION
+minikube   Ready    control-plane   17s   v1.30.0
+
+
+==> start your work 
+
+
