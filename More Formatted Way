@@ -1,0 +1,76 @@
+
+Here is the clean, formatted Markdown code. You can copy this code, save it as a file named install_minikube.md, and view it in any Markdown editor (like GitHub, GitLab, or VS Code).
+code
+Markdown
+# Kubernetes & Minikube Installation Guide (Windows)
+
+This guide covers the clean installation of Kubernetes tools using Chocolatey on Windows.
+
+### ⚠️ Prerequisites
+1.  **Docker Desktop** must be installed and running (Look for the whale icon in the taskbar).
+2.  **PowerShell** must be run as **Administrator**.
+
+---
+
+### Step 1: Install Chocolatey (Package Manager)
+*If you already have Chocolatey installed, skip to Step 2.*
+
+1. Copy and paste the command below into your **Administrator** PowerShell window:
+   
+   Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+Verify installation:
+Powershell
+choco -v
+(Output should be a version number, e.g., 2.3.0)
+
+
+Step 2: Install Kubectl
+kubectl is the command-line tool used to interact with the cluster.
+Run the install command:
+Powershell
+choco install kubernetes-cli -y
+
+
+Verify installation:
+Powershell
+kubectl version --client
+
+
+Step 3: Install Minikube
+minikube is the tool that creates the virtual Kubernetes cluster on your computer.
+Run the install command:
+Powershell
+choco install minikube -y
+
+Refersh Environment Variables (Important!):
+Run this command so Windows "sees" the new installation immediately without closing the window.
+Powershell
+refreshenv
+Verify installation:
+
+Powershell
+minikube version
+(If you see an error here, close PowerShell and open a new Administrator window).
+
+
+Step 4: Start the Cluster
+Now we turn on the virtual machine inside Docker.
+Start Minikube using the Docker driver:
+
+Powershell
+
+minikube start --driver=docker
+(Note: This may take a few minutes the first time as it downloads Kubernetes images).
+
+Step 5: Verify & Start Working
+Check if your cluster node is running and ready.
+Get node status:
+
+Powershell
+kubectl get nodes
+
+Expected Output:
+NAME       STATUS   ROLES           AGE   VERSION
+minikube   Ready    control-plane   17s   v1.30.0
+✅ You are now ready to deploy applications!
