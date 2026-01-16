@@ -431,6 +431,85 @@ You should see: "Hello Spring MVC Starter"  (our application is live now)
 
 
 
+
+PS C:\WINDOWS\system32> kubectl get svc
+>>
+NAME                  TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+kubernetes            ClusterIP      10.96.0.1       <none>        443/TCP        20h
+spring-boot-service   LoadBalancer   10.105.62.175   <pending>     80:30912/TCP   18h
+PS C:\WINDOWS\system32> minikube ip
+>>
+192.168.49.2
+PS C:\WINDOWS\system32> minikube service spring-boot-service
+>>
+|-----------|---------------------|-------------|---------------------------|
+| NAMESPACE |        NAME         | TARGET PORT |            URL            |
+|-----------|---------------------|-------------|---------------------------|
+| default   | spring-boot-service |          80 | http://192.168.49.2:30912 |
+|-----------|---------------------|-------------|---------------------------|
+* Starting tunnel for service spring-boot-service.
+|-----------|---------------------|-------------|------------------------|
+| NAMESPACE |        NAME         | TARGET PORT |          URL           |
+|-----------|---------------------|-------------|------------------------|
+| default   | spring-boot-service |             | http://127.0.0.1:54656 |
+|-----------|---------------------|-------------|------------------------|
+* Opening service default/spring-boot-service in default browser...
+! Because you are using a Docker driver on windows, the terminal needs to be open to run it.
+
+
+http://localhost:9090/api/get
+
+
+Windows
+ └── Docker Desktop
+      └── Minikube container
+           └── Kubernetes cluster
+
+Windows ❌──X──> 192.168.49.2 (Docker private network)
+
+
+
+CORRECT ways to access your app (Docker driver)
+✅ Option 1 (BEST & RECOMMENDED): minikube service
+minikube service spring-boot-service
+
+
+What this does:
+
+Creates a temporary tunnel
+Maps container → localhost
+Opens browser automatically
+You’ll get a URL like:
+http://127.0.0.1:<random-port>/api/get
+
+
+✔ This WILL work
+✔ This is the correct way with Docker driver
+
+✅ Option 2: minikube tunnel (LoadBalancer IP)
+minikube tunnel
+
+
+Keep this terminal open.
+
+Then:
+
+kubectl get svc
+You will now see:
+EXTERNAL-IP   10.x.x.x
+
+Access:
+http://<EXTERNAL-IP>/api/get
+
+✔ Works
+⚠️ Requires admin privileges
+⚠️ Tunnel must stay running
+
+http://127.0.0.1:<random-port>/api/get
+http://127.0.0.1:54656/api/get
+
+
+
 ==== extra for knowledge ===============
  
 Copy all that text.
