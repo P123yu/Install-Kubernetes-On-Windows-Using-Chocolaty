@@ -323,60 +323,7 @@ You should see: "Hello Spring MVC Starter"  (our application is live now)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+==== extra for knowledge ===============
  
 Copy all that text.
 Go to GitLab Settings -> CI/CD -> Variables.
