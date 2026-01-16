@@ -1,0 +1,401 @@
+
+
+step 1.  Installing & registering GitLab Runner (Windows)
+
+GitLab Runner install on your laptop (Connect GitLab to Your Cluster (Critical))
+
+Because GitLab runs on the internet. Your Minikube runs on your laptop. GitLab cannot see your laptop by default.
+To make this work with Minikube, you must use a GitLab Runner installed on your laptop, OR use a real cloud cluster (like GKE, AKS, or DigitalOcean).
+
+Scenario A: You are using Minikube on your laptop (Local)
+Since GitLab.com cannot reach your local Minikube, you must install the GitLab Runner on your Windows laptop so the pipeline runs locally.
+
+
+So Install GitLab Runner on Windows.
+
+Create a Folder
+1. So first go to D drive and create one folder name called GitLab-Runner  (D:\GitLab-Runner)
+
+Download
+2. Now Download the executable file from GitLab and rename the downloaded file to gitlab-runner.exe and save it into this ((D:\GitLab-Runner)) folder
+
+steps to download:-
+
+https://www.google.com/url?sa=E&q=https%3A%2F%2Fgitlab-runner-downloads.s3.amazonaws.com%2Flatest%2Fbinaries%2Fgitlab-runner-windows-amd64.exe
+this will open one link like below click and download  
+https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-windows-amd64.exe
+
+3. Get your Registration Token
+
+Go to your Project in GitLab.
+Settings -> CI/CD.
+Expand Runners.
+Click New Project Runner.
+Tags: Add a tag like local (Check "Run untagged jobs" to make life easier).  here local is name of runner which is running in our local pc (select windows os on gitlab)
+Click Create runner.
+COPY THE TOKEN (starts with glrt-).
+
+
+4. Register the Runner (The Important Part)
+
+Open PowerShell as Administrator, go to your folder (cd D:\GitLab-Runner), and run:
+PS D:\GitLab-Runner> ./gitlab-runner.exe register --url https://gitlab.com --token glrt-eSnQekL4pqRQ4UOuEMZ4l2B6MQpwOjFhOXY3cwp80jMKdTpqNmM4ZBg.01.ljikqrrxh
+
+Now Answer the questions exactly like this:
+GitLab instance URL: https://gitlab.com
+Name for the runner: My-Windows-Laptop
+Enter the authentication token: (Paste the token you copied in Step 3).
+Enter an executor: Type docker
+Enter the default Docker image: Type alpine:latest
+
+
+example:-
+
+PS D:\GitLab-Runner> .\gitlab-runner.exe register  --url https://gitlab.com  --token glrt-eSnQakl4pqRQ4UOuEMZ4l286MQpwOjFhOXY3cwp0OjMKdTpqNmM4ZBg.01.1j1kqrrxh
+Runtime platform                                    arch=amd64 os=windows pid=17136 revision=1c855082 version=18.7.2
+Enter the GitLab instance URL (for example, https://gitlab.com/):
+[https://gitlab.com]: https://gitlab.com/
+Verifying runner... is valid                        correlation_id=9be56d0af0c5335a-IAD runner=eSnQakl4p
+Enter a name for the runner. This is stored only in the local config.toml file:
+[PiyushKumar]: My-Windows-Laptop
+Enter an executor: custom, shell, parallels, docker, kubernetes, instance, ssh, virtualbox, docker-windows, docker+machine, docker-autoscaler:
+docker
+Enter the default Docker image (for example, ruby:3.3):
+alpine:latest
+Runner registered successfully. Feel free to start it, but if it's running already the config should be automatically reloaded!
+
+Configuration (with the authentication token) was saved in "D:\\GitLab-Runner\\config.toml"
+
+
+5. Install and Start in Powershell
+
+./gitlab-runner.exe install
+./gitlab-runner.exe start
+
+example:-
+PS D:\GitLab-Runner> ./gitlab-runner.exe install
+>> ./gitlab-runner.exe start
+Runtime platform                                    arch=amd64 os=windows pid=8088 revision=1c855082 version=18.7.2
+Runtime platform                                    arch=amd64 os=windows pid=10560 revision=1c855082 version=18.7.2
+PS D:\GitLab-Runner> .\gitlab-runner.exe restart
+Runtime platform                                    arch=amd64 os=windows pid=13064 revision=1c855082 version=18.7.2
+
+Congratulations! You have successfully installed and registered the GitLab Runner on your Windows laptop.
+now after this
+
+we will see one file called config.toml  is created under D:\GitLab-Runner.
+Open the file named config.toml  and 
+
+Step 1. paste below config :-
+
+concurrent = 1
+check_interval = 0
+shutdown_timeout = 0
+
+[session_server]
+  session_timeout = 1800
+
+[[runners]]
+  name = "My-Windows-Laptop"
+  url = "https://gitlab.com/"
+  id = 51318499
+  token = "glrt-eSnQakl4pqRQ4UOuEMZ4l286MQpwOjFhOXY3cwp0OjMKdTpqNmM4ZBg.01.1j1kqrrxh"
+  token_obtained_at = 2026-01-15T12:37:42Z
+  token_expires_at = 0001-01-01T00:00:00Z
+  executor = "docker"
+  [runners.cache]
+    MaxUploadedArchiveSize = 0
+    [runners.cache.s3]
+    [runners.cache.gcs]
+    [runners.cache.azure]
+  [runners.docker]
+    tls_verify = false
+    image = "alpine:latest"
+    privileged = true
+	network_mode = "minikube"
+    disable_entrypoint_overwrite = false
+    oom_kill_disable = false
+    disable_cache = false
+    volumes = ["/cache"]
+    shm_size = 0
+    network_mtu = 0
+
+
+
+in above config 
+The Solution:
+Since both Minikube and your GitLab Runner Job are running inside Docker, we can simply put them on the same Docker Network. This allows them to talk directly to each other without going through Windows.
+Here is the 3-step fix:
+
+we updated config.toml
+We need to tell the GitLab Runner to attach all job containers to the existing minikube network.
+Open the file D:\GitLab-Runner\config.toml with Notepad.
+Find the [runners.docker] section.
+we add this line inside that section: network_mode = "minikube"
+
+
+Step 2: Restart the Runner
+For the changes to take effect, go back to your Administrator PowerShell window and run:
+.\gitlab-runner.exe restart
+
+
+Step 3: Check GitLab
+Go to your GitLab Project.
+Navigate to Settings -> CI/CD.
+Expand Runners.
+You should see a Green Circle next to My-Windows-Laptop.
+
+
+
+
+6. The Final Connection (Minikube Config)
+
+Now that the runner is alive, it needs the "password" to talk to Minikube.
+
+
+Open PowerShell and type:
+cat ~/.kube/config   ==> this command will point out our file path so we do not use this command so we are not using (PS D:\GitLab-Runner> cat ~/.kube/config)
+
+File Paths: It points to C:\Users\piyush_kumar\.... The Docker container (running Linux) cannot access your C: drive. It will say "Certificate file not found."
+IP Address: It points to 127.0.0.1. Inside Docker, that means "me," not your laptop.
+
+How to fix it (The "Flatten" Trick)
+We need to tell kubectl to read those certificate files and embed the actual data into the text, so we don't need file paths anymore.
+
+Step 1: Generate the Correct Config
+
+Run this exact command in your PowerShell window:
+kubectl config view --flatten --minify
+
+
+example: 
+
+PS D:\GitLab-Runner> kubectl config view --flatten --minify
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCakNDQWU2Z0F3SUJBZ0lCQVRBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwdGFXNXAKYTNWaVpVTkJNQjRYRFRJMk1ERXhOREV4TkRJeU5Gb1hEVE0yTURFeE16RXhOREl5TkZvd0ZURVRNQkVHQTFVRQpBeE1LYldsdWFXdDFZbVZEUVRDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBT3lhClkybUR4YlMzYVp6RlNFUGZIU2ZDYXRmQkFDRzdJcW1Oak1Ebks1ajNnNnNHS0QxOEQrMGNiVXZONzJOZVM2M3gKeEM5WEtuZ1NwQUhVRE00a0orTnBBN2pKVFZwYmNqV21rZ2pheG05TFBLWXk4c0pFdmJWSGZXYWxLZUdxRTBiSgpWd1A2UkUvM2FUeDJkeHp1TXgyN3NpQzcrd21MMHZoWnpaanJuRFIyNEFjVHJkbjFtYUVMZnErNjVwY3FtMEJ0Ckk1d3V0Zk5YYmFwalpuQzhweWVPeTdpY1E3bmgxS1JieUpXZGJLNXM4eWpSRUhWUmlBVzJxZVhZakdNRGJYaG4KSXloN2xBSFpiSDVyNDcvaG9tR1dXSDdnNFVCcTlOaTAzbmJUMVExQ0tIQVhtMFVRY2Mrbnk0OUJ1b2UwL2QrSQpVYXphV0JyQi9DK3l2M0psN21zQ0F3RUFBYU5oTUY4d0RnWURWUjBQQVFIL0JBUURBZ0trTUIwR0ExVWRKUVFXCk1CUUdDQ3NHQVFVRkJ3TUNCZ2dyQmdFRkJRY0RBVEFQQmdOVkhSTUJBZjhFQlRBREFRSC9NQjBHQTFVZERnUVcKQkJUY1h2bXdST0prRHJrTTBTcW02V2lyeWNpK3NEQU5CZ2txaGtpRzl3MEJBUXNGQUFPQ0FRRUFnSTFhanZmOApTZm1naTVrNnFwUnZhcmxmWThqZUJhWXNZU1draDBVRUZqcE9GeGZsaFFra3diTStLQ0RqcTlONVZDQnAyVnlNCk1FblhCRS9yVG9VTll1anVjYm85SENRdUJ4ekpIOTZjMEljemNwN0RPSVJueE5YTnBPQm9yYVdvcFpMMlEyQ3kKSzRmcGRTOTRyMlFnNFlEeTJycmRuejV4ZlNkZG1xYlV5TGcrWHVPeC8zaEcyTTdDZFFpa1RGK3NlV016RHJrdQo3V3dqa2xibUdmc2w1d1c3RjZoSVJLVzY1eEk5R2ZJOEdrRUtHd3VSR01LTlV2RmlnMFdGaXhycTRpQVVKWXRKCnJvOTJhUDBFVDN5REttdjNtQks2dlhwVGVmYUhRRHFyQVVBd1RDTHNNZW5CTjFKOExXVXNDZ0JsR2JpbDJCenYKeGlYU2labGVaQnphaUE9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    extensions:
+    - extension:
+        last-update: Thu, 15 Jan 2026 17:29:26 IST
+        provider: minikube.sigs.k8s.io
+        version: v1.33.0
+      name: cluster_info
+    server: https://127.0.0.1:64272
+  name: minikube
+contexts:
+- context:
+    cluster: minikube
+    extensions:
+    - extension:
+        last-update: Thu, 15 Jan 2026 17:29:26 IST
+        provider: minikube.sigs.k8s.io
+        version: v1.33.0
+      name: context_info
+    namespace: default
+    user: minikube
+  name: minikube
+current-context: minikube
+kind: Config
+preferences: {}
+users:
+- name: minikube
+  user:
+    client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURJVENDQWdtZ0F3SUJBZ0lCQWpBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwdGFXNXAKYTNWaVpVTkJNQjRYRFRJMk1ERXhOREV4TkRJeU5Gb1hEVEk1TURFeE5ERXhOREl5TkZvd01URVhNQlVHQTFVRQpDaE1PYzNsemRHVnRPbTFoYzNSbGNuTXhGakFVQmdOVkJBTVREVzFwYm1scmRXSmxMWFZ6WlhJd2dnRWlNQTBHCkNTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFEY2ZUWUo0a1pwRWNsTDZEWmJJMTZQQ2QvTUptU20KQjBYdncxbHJBWGZSZ2YrYjgwSWtVeUtNMHRIbnVBWTdpQU1uVVN6QzNzLzg4YXNmM2d5SlVJbHFnOUkwc095MgpoOU9aczh3eHRJc1QzcStLQ0swOTgvYVpTajNzVmcyQXJTSmUrbkxwWlNpdC8wblRpbFo5ajRBNWJUWFZFcTFrCkhwSEY5YkpNNWhUQ1dJc08vNFd2MWlqdjFicWdwbW42aVM1cGlSS0R2UWc5VzZudWpDNzlBWTZwYmlPQ2ZnSzYKYWxoZWkzbStsbWFuQVB4TWJVdzJYZGt1amwwb1QvYTNTcnplRHM1bkFOeW5hY1B1akNBVitmL2JVRFUzeXRteAozSCtXNEJ1V3p2cHpFTURhYzU4Sm1BMlhKOGNuUzVxWVViOWRwdDBab2l2aGN4cTZCZ3FoSVBZUEFnTUJBQUdqCllEQmVNQTRHQTFVZER3RUIvd1FFQXdJRm9EQWRCZ05WSFNVRUZqQVVCZ2dyQmdFRkJRY0RBUVlJS3dZQkJRVUgKQXdJd0RBWURWUjBUQVFIL0JBSXdBREFmQmdOVkhTTUVHREFXZ0JUY1h2bXdST0prRHJrTTBTcW02V2lyeWNpKwpzREFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBUUxvVkE5MkVjdEw0L3ZtMUtNSDJHSG9qekw5dG96SUJCM0pNCnZubjZJTFo1eVRXN1RPTzhMTkVTWHZLL0VDSzI5MjNzSEsyb05tZndzR2R0Q0JUd0UzTDRqUXNZVzlHVjdkeXMKbjV2QjJjS1pUQ0haKzNKa09XaUlDMG5KRFZOSFRsbXFIOTVlOVlMc2Jqa1RtOUo1S0JtdE5FSVNZTUxCK0lXZQpzYmFheUZuZWFtWVp2cEp3QkVQVXE1Rko0bzZlZEVXUHplZGZqTG44cEVpY2E4QlNMWVZsc0RPcktuYThnaWxECjgyZXRXdzVqMG8ycTdNNjBiZ2ZYQzVxY1JydFNZek9QK3VGVm8rN2FKR0FDNUZicUJqbVRXOFVValo0a1h3YzcKeHliQm9rbHdvZmZKY1VRY0FaZjV0T2FOdUpUOERXenRQN2t5RU9vNVNKN20wVW5rV3c9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    client-key-data: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBM0gwMkNlSkdhUkhKUytnMld5TmVqd25mekNaa3BnZEY3OE5aYXdGMzBZSC9tL05DCkpGTWlqTkxSNTdnR080Z0RKMUVzd3Q3UC9QR3JIOTRNaVZDSmFvUFNOTERzdG9mVG1iUE1NYlNMRTk2dmlnaXQKUGZQMm1Vbzk3RllOZ0swaVh2cHk2V1VvcmY5SjA0cFdmWStBT1cwMTFSS3RaQjZSeGZXeVRPWVV3bGlMRHYrRgpyOVlvNzlXNm9LWnArb2t1YVlrU2c3MElQVnVwN293dS9RR09xVzRqZ240Q3VtcFlYb3Q1dnBabXB3RDhURzFNCk5sM1pMbzVkS0UvMnQwcTgzZzdPWndEY3AybkQ3b3dnRmZuLzIxQTFOOHJac2R4L2x1QWJsczc2Y3hEQTJuT2YKQ1pnTmx5ZkhKMHVhbUZHL1hhYmRHYUlyNFhNYXVnWUtvU0QyRHdJREFRQUJBb0lCQVFDeWtwNHZoeGxyZzBJNgp2Z2szNnY5c2JaelpwTWFqU1FTMVdNdVV4STJjR3VOQUZOWWV3VTRjSzZwaE4wT2s5MVZHaEpIeUNhNzl0MlRXCjNHbmUxR0ZXNlFoWU1HcW1zbjhIM3Z5anpRdE92bTRCSjJIWDZUeHhqaFYwMFlVQ0VEYmtJWWJyekVnVUU4eGgKRFl0YkNkdlpwcitRb0IzYUZvQU5paDRyOWJRZWFVS2pxZTRocGp3R05IQXUyNUNYR0h1SDVLVlB0bEdWdE1EcgprR0lTYkpvQTFJNHVsTUk1amtlaWY0RFd6N0FkTDlWSkRQb3pHWWIwbW15ZXRVZ1JCR05NMmd5cldCNEtETExSCm1KejEvL05EM0Iwa0JVTytSVDRPSUVOakpXSkVqejc3L3Y5Y1lpRjZGVVg2d1VCU0t0MlNSWXNFUm5lb2ZRUXEKWVk5YmJIT1JBb0dCQU9ScFRnMVo5QWlTeDQwdFJqY3AxWUwyUHdhL2xVVU1IQ25BUE9iNVpmR1IxUWxBQng4TwprRlhXaVNRYk1oTFE3Zm41UzdPRTlrV3pjWDU2aDBqdjArUHNHR2wzSGZadXpET2R0L0NsY0JFaTBTRDNQWFJyCnZRUjdVRE4xdG1HNGVlcmV4WjJrTU1VUXBWWHhVL1NiUWRVVDZRUEhlYmJsYUZtWlZ6WUExVzNkQW9HQkFQY2UKOFdmcmNoRjhxZWRUaTJxQ1ZNSUh2anp3MUIwNnprZk1KTlNKSis5QVhxay94enArdStYK2YxQks4WXNKZjVDZQo5V2E1czUzZWhRaDE3R0FucDEyL2NGem5teW5qYUQ2L0I1RmRXNWlGK1FMOEh0QWJqTFA1bGpWRFU1L1pGNy9vCkc1SGpwVDNNUDNDR21uL3ErRWlHbUE4QXQ4TE9LVmxUK1JhUURVTGJBb0dCQU4rSU13dWI4ZGdHRldhVFhUa1YKSnRBQXYxT1NZTG52RFF6TEJvOGdtZVRjekRrK1FQbmkzZHd6bFlrUldHTFR0MkhBMkpYNlZLMkgzRlZrQWt1ZAo4YWNINGlnc205VVZQNkJ3Qkpoc3Y0ejFudVo5TDlaa3JkblorSFkwQitZQWpNZ1BkaVE5a0VEN2RtTHlSekNHClZObjduem5FbU5nbUVJWkhLL004dzZLOUFvR0FFdHFCZ0hRdUY3ZHpIdnI0di8rQmgrd2ZUM2J3Titxc29qMm8KOGE0bEpkTzdaUjVBak8zdVYvVzZzTjJHNEJ5eFpzODUyY1NCTjZJcWRDTExEZXI0a2VaeEpDVm5hU0s0YVZFWgp1clZzcjQ1SkdUa3pBSjJaZG9Hc1BCUU81VHNpM0xsUW9TakZDcG55blJzbjNtcUcxc0d1Q0RiOXpoYjhnSnd2CmZORXdzZEVDZ1lCN09BSkJrZ3VvNVdiWWdtMXJINUpxalJaeHlIeGlQeEorRllGS3ZlTzhvV2FGSlBNeG5xK0QKL2o5VlJBQmRva0xhZ0ZEVTk1OFhSajFmY1R0akd5WUZRNXoybWhSRUVtWSthNDI5dE5jY1lHRHEyVDNBNURpVQpjRFp0cXJxYXJ1Uk5xTXVlakpib1NwSWNaOGtSQ3QyaWZMK3A1b1kwNHRqZ3hTSE4yWmlFcmc9PQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
+
+
+
+Step 2: Copy and Edit
+Copy the output from that command.
+Paste it into Notepad.
+Notice the difference: Instead of certificate-authority: C:\..., you will now see huge blocks of random text called certificate-authority-data: .... This is what we want.
+
+
+Because now on top we set network_mode = "minikube" in your runner config, the runner is now "inside" the Minikube network. 
+Inside that network, the address 127.0.0.1 or host.docker.internal with a random port (like 64272) will not work.
+You must change the server address to the internal Minikube address: https://minikube:8443.
+
+so we have updated the server line for you below. Copy this entire block and update your KUBECONFIG_FILE variable in GitLab.
+
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCakNDQWU2Z0F3SUJBZ0lCQVRBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwdGFXNXAKYTNWaVpVTkJNQjRYRFRJMk1ERXhOREV4TkRJeU5Gb1hEVE0yTURFeE16RXhOREl5TkZvd0ZURVRNQkVHQTFVRQpBeE1LYldsdWFXdDFZbVZEUVRDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBT3lhClkybUR4YlMzYVp6RlNFUGZIU2ZDYXRmQkFDRzdJcW1Oak1Ebks1ajNnNnNHS0QxOEQrMGNiVXZONzJOZVM2M3gKeEM5WEtuZ1NwQUhVRE00a0orTnBBN2pKVFZwYmNqV21rZ2pheG05TFBLWXk4c0pFdmJWSGZXYWxLZUdxRTBiSgpWd1A2UkUvM2FUeDJkeHp1TXgyN3NpQzcrd21MMHZoWnpaanJuRFIyNEFjVHJkbjFtYUVMZnErNjVwY3FtMEJ0Ckk1d3V0Zk5YYmFwalpuQzhweWVPeTdpY1E3bmgxS1JieUpXZGJLNXM4eWpSRUhWUmlBVzJxZVhZakdNRGJYaG4KSXloN2xBSFpiSDVyNDcvaG9tR1dXSDdnNFVCcTlOaTAzbmJUMVExQ0tIQVhtMFVRY2Mrbnk0OUJ1b2UwL2QrSQpVYXphV0JyQi9DK3l2M0psN21zQ0F3RUFBYU5oTUY4d0RnWURWUjBQQVFIL0JBUURBZ0trTUIwR0ExVWRKUVFXCk1CUUdDQ3NHQVFVRkJ3TUNCZ2dyQmdFRkJRY0RBVEFQQmdOVkhSTUJBZjhFQlRBREFRSC9NQjBHQTFVZERnUVcKQkJUY1h2bXdST0prRHJrTTBTcW02V2lyeWNpK3NEQU5CZ2txaGtpRzl3MEJBUXNGQUFPQ0FRRUFnSTFhanZmOApTZm1naTVrNnFwUnZhcmxmWThqZUJhWXNZU1draDBVRUZqcE9GeGZsaFFra3diTStLQ0RqcTlONVZDQnAyVnlNCk1FblhCRS9yVG9VTll1anVjYm85SENRdUJ4ekpIOTZjMEljemNwN0RPSVJueE5YTnBPQm9yYVdvcFpMMlEyQ3kKSzRmcGRTOTRyMlFnNFlEeTJycmRuejV4ZlNkZG1xYlV5TGcrWHVPeC8zaEcyTTdDZFFpa1RGK3NlV016RHJrdQo3V3dqa2xibUdmc2w1d1c3RjZoSVJLVzY1eEk5R2ZJOEdrRUtHd3VSR01LTlV2RmlnMFdGaXhycTRpQVVKWXRKCnJvOTJhUDBFVDN5REttdjNtQks2dlhwVGVmYUhRRHFyQVVBd1RDTHNNZW5CTjFKOExXVXNDZ0JsR2JpbDJCenYKeGlYU2labGVaQnphaUE9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    extensions:
+    - extension:
+        last-update: Thu, 15 Jan 2026 17:29:26 IST
+        provider: minikube.sigs.k8s.io
+        version: v1.33.0
+      name: cluster_info
+    # CHANGED: Use the internal hostname and port because we are using network_mode="minikube"
+    server: https://minikube:8443
+  name: minikube
+contexts:
+- context:
+    cluster: minikube
+    extensions:
+    - extension:
+        last-update: Thu, 15 Jan 2026 17:29:26 IST
+        provider: minikube.sigs.k8s.io
+        version: v1.33.0
+      name: context_info
+    namespace: default
+    user: minikube
+  name: minikube
+current-context: minikube
+kind: Config
+preferences: {}
+users:
+- name: minikube
+  user:
+    client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURJVENDQWdtZ0F3SUJBZ0lCQWpBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwdGFXNXAKYTNWaVpVTkJNQjRYRFRJMk1ERXhOREV4TkRJeU5Gb1hEVEk1TURFeE5ERXhOREl5TkZvd01URVhNQlVHQTFVRQpDaE1PYzNsemRHVnRPbTFoYzNSbGNuTXhGakFVQmdOVkJBTVREVzFwYm1scmRXSmxMWFZ6WlhJd2dnRWlNQTBHCkNTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFEY2ZUWUo0a1pwRWNsTDZEWmJJMTZQQ2QvTUptU20KQjBYdncxbHJBWGZSZ2YrYjgwSWtVeUtNMHRIbnVBWTdpQU1uVVN6QzNzLzg4YXNmM2d5SlVJbHFnOUkwc095MgpoOU9aczh3eHRJc1QzcStLQ0swOTgvYVpTajNzVmcyQXJTSmUrbkxwWlNpdC8wblRpbFo5ajRBNWJUWFZFcTFrCkhwSEY5YkpNNWhUQ1dJc08vNFd2MWlqdjFicWdwbW42aVM1cGlSS0R2UWc5VzZudWpDNzlBWTZwYmlPQ2ZnSzYKYWxoZWkzbStsbWFuQVB4TWJVdzJYZGt1amwwb1QvYTNTcnplRHM1bkFOeW5hY1B1akNBVitmL2JVRFUzeXRteAozSCtXNEJ1V3p2cHpFTURhYzU4Sm1BMlhKOGNuUzVxWVViOWRwdDBab2l2aGN4cTZCZ3FoSVBZUEFnTUJBQUdqCllEQmVNQTRHQTFVZER3RUIvd1FFQXdJRm9EQWRCZ05WSFNVRUZqQVVCZ2dyQmdFRkJRY0RBUVlJS3dZQkJRVUgKQXdJd0RBWURWUjBUQVFIL0JBSXdBREFmQmdOVkhTTUVHREFXZ0JUY1h2bXdST0prRHJrTTBTcW02V2lyeWNpKwpzREFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBUUxvVkE5MkVjdEw0L3ZtMUtNSDJHSG9qekw5dG96SUJCM0pNCnZubjZJTFo1eVRXN1RPTzhMTkVTWHZLL0VDSzI5MjNzSEsyb05tZndzR2R0Q0JUd0UzTDRqUXNZVzlHVjdkeXMKbjV2QjJjS1pUQ0haKzNKa09XaUlDMG5KRFZOSFRsbXFIOTVlOVlMc2Jqa1RtOUo1S0JtdE5FSVNZTUxCK0lXZQpzYmFheUZuZWFtWVp2cEp3QkVQVXE1Rko0bzZlZEVXUHplZGZqTG44cEVpY2E4QlNMWVZsc0RPcktuYThnaWxECjgyZXRXdzVqMG8ycTdNNjBiZ2ZYQzVxY1JydFNZek9QK3VGVm8rN2FKR0FDNUZicUJqbVRXOFVValo0a1h3YzcKeHliQm9rbHdvZmZKY1VRY0FaZjV0T2FOdUpUOERXenRQN2t5RU9vNVNKN20wVW5rV3c9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    client-key-data: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBM0gwMkNlSkdhUkhKUytnMld5TmVqd25mekNaa3BnZEY3OE5aYXdGMzBZSC9tL05DCkpGTWlqTkxSNTdnR080Z0RKMUVzd3Q3UC9QR3JIOTRNaVZDSmFvUFNOTERzdG9mVG1iUE1NYlNMRTk2dmlnaXQKUGZQMm1Vbzk3RllOZ0swaVh2cHk2V1VvcmY5SjA0cFdmWStBT1cwMTFSS3RaQjZSeGZXeVRPWVV3bGlMRHYrRgpyOVlvNzlXNm9LWnArb2t1YVlrU2c3MElQVnVwN293dS9RR09xVzRqZ240Q3VtcFlYb3Q1dnBabXB3RDhURzFNCk5sM1pMbzVkS0UvMnQwcTgzZzdPWndEY3AybkQ3b3dnRmZuLzIxQTFOOHJac2R4L2x1QWJsczc2Y3hEQTJuT2YKQ1pnTmx5ZkhKMHVhbUZHL1hhYmRHYUlyNFhNYXVnWUtvU0QyRHdJREFRQUJBb0lCQVFDeWtwNHZoeGxyZzBJNgp2Z2szNnY5c2JaelpwTWFqU1FTMVdNdVV4STJjR3VOQUZOWWV3VTRjSzZwaE4wT2s5MVZHaEpIeUNhNzl0MlRXCjNHbmUxR0ZXNlFoWU1HcW1zbjhIM3Z5anpRdE92bTRCSjJIWDZUeHhqaFYwMFlVQ0VEYmtJWWJyekVnVUU4eGgKRFl0YkNkdlpwcitRb0IzYUZvQU5paDRyOWJRZWFVS2pxZTRocGp3R05IQXUyNUNYR0h1SDVLVlB0bEdWdE1EcgprR0lTYkpvQTFJNHVsTUk1amtlaWY0RFd6N0FkTDlWSkRQb3pHWWIwbW15ZXRVZ1JCR05NMmd5cldCNEtETExSCm1KejEvL05EM0Iwa0JVTytSVDRPSUVOakpXSkVqejc3L3Y5Y1lpRjZGVVg2d1VCU0t0MlNSWXNFUm5lb2ZRUXEKWVk5YmJIT1JBb0dCQU9ScFRnMVo5QWlTeDQwdFJqY3AxWUwyUHdhL2xVVU1IQ25BUE9iNVpmR1IxUWxBQng4TwprRlhXaVNRYk1oTFE3Zm41UzdPRTlrV3pjWDU2aDBqdjArUHNHR2wzSGZadXpET2R0L0NsY0JFaTBTRDNQWFJyCnZRUjdVRE4xdG1HNGVlcmV4WjJrTU1VUXBWWHhVL1NiUWRVVDZRUEhlYmJsYUZtWlZ6WUExVzNkQW9HQkFQY2UKOFdmcmNoRjhxZWRUaTJxQ1ZNSUh2anp3MUIwNnprZk1KTlNKSis5QVhxay94enArdStYK2YxQks4WXNKZjVDZQo5V2E1czUzZWhRaDE3R0FucDEyL2NGem5teW5qYUQ2L0I1RmRXNWlGK1FMOEh0QWJqTFA1bGpWRFU1L1pGNy9vCkc1SGpwVDNNUDNDR21uL3ErRWlHbUE4QXQ4TE9LVmxUK1JhUURVTGJBb0dCQU4rSU13dWI4ZGdHRldhVFhUa1YKSnRBQXYxT1NZTG52RFF6TEJvOGdtZVRjekRrK1FQbmkzZHd6bFlrUldHTFR0MkhBMkpYNlZLMkgzRlZrQWt1ZAo4YWNINGlnc205VVZQNkJ3Qkpoc3Y0ejFudVo5TDlaa3JkblorSFkwQitZQWpNZ1BkaVE5a0VEN2RtTHlSekNHClZObjduem5FbU5nbUVJWkhLL004dzZLOUFvR0FFdHFCZ0hRdUY3ZHpIdnI0di8rQmgrd2ZUM2J3Titxc29qMm8KOGE0bEpkTzdaUjVBak8zdVYvVzZzTjJHNEJ5eFpzODUyY1NCTjZJcWRDTExEZXI0a2VaeEpDVm5hU0s0YVZFWgp1clZzcjQ1SkdUa3pBSjJaZG9Hc1BCUU81VHNpM0xsUW9TakZDcG55blJzbjNtcUcxc0d1Q0RiOXpoYjhnSnd2CmZORXdzZEVDZ1lCN09BSkJrZ3VvNVdiWWdtMXJINUpxalJaeHlIeGlQeEorRllGS3ZlTzhvV2FGSlBNeG5xK0QKL2o5VlJBQmRva0xhZ0ZEVTk1OFhSajFmY1R0akd5WUZRNXoybWhSRUVtWSthNDI5dE5jY1lHRHEyVDNBNURpVQpjRFp0cXJxYXJ1Uk5xTXVlakpib1NwSWNaOGtSQ3QyaWZMK3A1b1kwNHRqZ3hTSE4yWmlFcmc9PQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
+
+
+
+Step 3: Change the Server URL
+In Notepad, find the line:
+server: https://127.0.0.1:64272
+
+
+
+Step 4: Save to GitLab  (Final Instructions)
+
+Now, take that final edited text from Notepad:
+Go to GitLab Settings -> CI/CD -> Variables.
+Add Variable:
+Key: KUBECONFIG_FILE
+Type: File (Crucial!)
+Value: Paste your long, flattened, edited config.
+Uncheck "Protected".
+Click Add variable.
+Now your pipeline will have the certificates embedded inside it and knows how to talk to your laptop! You are ready to push your code.
+
+notes for step 4: ============================================
+
+GitLab cannot mask variables that contain spaces or new lines. Since your Kubeconfig file is a YAML file (which is full of spaces and new lines), masking is impossible.
+How to fix it:
+Scroll up to the Visibility section.
+Change the selection from Masked to Visible.
+(Don't worry, because you selected Type: File, GitLab won't print the contents in the logs unless you specifically ask it to).
+Click Add variable.
+
+
+step 5. Verify it works on your Laptop
+Once the pipeline shows Passed,
+go to your Administrator PowerShell on your laptop and run:
+
+Check if the Pod is running:
+kubectl get pods
+(You should see spring-boot-app-xxxxx with Status Running).
+
+Access the Application:
+Since Minikube on Docker is tricky with IPs, use port-forwarding to see your app:
+kubectl port-forward service/spring-boot-service 9090:80
+
+Open your Browser:
+Go to: http://localhost:9090/api/get
+You should see: "Hello Spring MVC Starter" (or whatever message you put in your controller).
+
+example:
+
+PS D:\GitLab-Runner> .\gitlab-runner.exe restart
+Runtime platform                                    arch=amd64 os=windows pid=18160 revision=1c855082 version=18.7.2
+PS D:\GitLab-Runner> .\gitlab-runner.exe restart
+Runtime platform                                    arch=amd64 os=windows pid=17288 revision=1c855082 version=18.7.2
+
+
+PS D:\GitLab-Runner> kubectl get pods
+NAME                               READY   STATUS    RESTARTS   AGE
+spring-boot-app-5fc9c6fbcf-4tpqg   1/1     Running   0          53s
+
+
+PS D:\GitLab-Runner> kubectl port-forward service/spring-boot-service 9090:80
+Forwarding from 127.0.0.1:9090 -> 8080
+Forwarding from [::1]:9090 -> 8080
+Handling connection for 9090
+Handling connection for 9090
+
+
+Go to: http://localhost:9090/api/get    
+You should see: "Hello Spring MVC Starter"  (our application is live now)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+Copy all that text.
+Go to GitLab Settings -> CI/CD -> Variables.
+Add Variable:
+Key: KUBECONFIG_FILE
+Type: File (Select from dropdown)
+Value: Paste your config text.
+One detailed fix for Minikube:
+In the text you pasted into the variable, look for server: https://127.0.0.1:xxxxx.
+Because the runner runs inside Docker, 127.0.0.1 means "the container itself," not your laptop.
+You might need to change 127.0.0.1 to host.docker.internal in that Variable value so the container can route traffic out to your Windows host where Minikube lives.
+
+
+
+
+
+
+
+
+
+
+
