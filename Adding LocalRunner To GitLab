@@ -185,6 +185,62 @@ Open the file D:\GitLab-Runner\config.toml with Notepad.
 Find the [runners.docker] section.
 we add this line inside that section: network_mode = "minikube"
 
+---------------------------------------------------------------------------- knowledge -----------------------------------------------------------------
+Lock this sentence in your brain
+network_mode = "minikube" means the GitLab job container is physically plugged into the same Docker network as the Minikube container. Docker DNS connects them by name.
+
+docker network inspect minikube
+
+
+| Runner network       | Kubeconfig server           |
+| -------------------- | --------------------------- |
+| Default bridge       | `host.docker.internal:PORT` |
+| **minikube network** | **`https://minikube:8443`** |  Inside the Minikube container: Kubernetes API server runs on 8443
+
+-------------------------------------------------------------------
+Because you are using:
+network_mode = "minikube"
+
+Your kubeconfig MUST use:
+server: https://minikube:8443
+
+Why https://minikube:8443 works ? ---------
+
+Because:
+
+Minikube runs as a Docker container
+Docker creates a network called minikube
+
+Inside that network:
+
+minikube is a DNS hostname
+Port 8443 is the Kubernetes API
+
+So now traffic is:
+
+GitLab Job Container
+        |
+        |  Docker network (minikube)
+        v
+Minikube container (API server)
+
+
+✅ No Windows
+✅ No hairpin
+✅ No loopback
+✅ No firewall issues
+
+
+❌ WRONG COMBINATION (this is what you currently have)
+
+if we are doing both:
+network_mode = "minikube"
+
+server: https://host.docker.internal:64272
+❌ This is logically wrong
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 Step 2: Restart the Runner
 For the changes to take effect, go back to your Administrator PowerShell window and run:
